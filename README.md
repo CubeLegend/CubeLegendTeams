@@ -1,1 +1,1 @@
-# CubeLegendTeams
+# CubeLegend's Teams
