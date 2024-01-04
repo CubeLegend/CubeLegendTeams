@@ -1,8 +1,9 @@
-require("MainGui")
-require("Team")
+local MainGui = require("MainGui")
 
----@type table<string, table<int, MainGui>>
-global.guis = {}
+global.guis = {} ---@type table<int, LuaGuiElement>
+global.dynamicGuiElements = {} ---@type table<int, LuaGuiElement[]>
+global.teamPanel = {} ---@type table<int, LuaGuiElement[]>
+global.teams = {} ---@type LuaForce[]
 
 local function tablelength(T)
     local count = 0
@@ -16,14 +17,58 @@ end
 script.on_event(defines.events.on_player_created, function (event)
     local player = game.get_player(event.player_index)
     ---@cast player -?
-    local existingTeams = global.teams
-    local newTeamNumber = tostring(tablelength(existingTeams) + 1)
-    local newTeam = Team.new("Team"..newTeamNumber)
-    newTeam:addPlayer(player)
 
-    gui = MainGui.new(player.gui.screen, "Teams")
-    if global.guis[newTeam.name] == nil then
-        global.guis[newTeam.name] = {}
+    local existingTeams = global.teams
+    local newTeamNumber = tostring(table_size(existingTeams) + 1)
+    local newTeam = game.create_force("Team"..newTeamNumber)
+    global.teams[newTeam.index] = newTeam
+
+    --- set initial relations to other teams
+    for _, team in pairs(global.teams) do
+        newTeam.set_cease_fire(team, true)
+        newTeam.set_friend(team, false)
+        team.set_cease_fire(newTeam, true)
+        team.set_friend(newTeam, false)
     end
-    global.guis[newTeam.name][player.index] = gui
+
+    player.print(player.force.name)
+    player.force = newTeam
+    player.print(player.force.name)
+
+    --- rebuild guis
+    for playerIndex, gui in pairs(global.guis) do
+        gui.destroy()
+        local playerWithGui = game.get_player(playerIndex)
+        ---@cast playerWithGui -?
+        local force = player.force
+        ---@cast force LuaForce
+        gui = MainGui.buildFrame(playerWithGui.gui.screen, "Teams", force, playerIndex)
+        global.guis[playerIndex] = gui
+    end
+
+    gui = MainGui.buildFrame(player.gui.screen, "Teams", newTeam, event.player_index)
+    global.guis[player.index] = gui
 end)
+
+script.on_event(defines.events.on_gui_click, function (event)
+    player = game.get_player(event.player_index)
+    ---@cast player -?
+    if event.element.name == "clt_enemy" then
+        team = player.force
+        otherTeamName = event.element.parent.clt_team_name.caption
+        ---@cast otherTeamName string
+        player.print(otherTeamName)
+        player.print(event.element.toggled)
+        team.set_cease_fire(otherTeamName, (not event.element.toggled))
+        player.print(team.get_cease_fire(otherTeamName))
+        MainGui.updateDynamicElements(team.players)
+    end
+end)
+
+function afterCutscene(event)
+    for _, player in pairs(game.forces.player.players) do
+        player.force = global.teams[4]
+    end
+end
+script.on_event(defines.events.on_cutscene_cancelled, afterCutscene)
+script.on_event(defines.events.on_cutscene_finished, afterCutscene)

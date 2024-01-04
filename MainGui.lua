@@ -1,13 +1,8 @@
 ---@class MainGui
----@field parent LuaGuiElement
----@field name string
----@field raw LuaGuiElement
----@field dynamicElements LuaGuiElement[]
-MainGui = {}
-MainGui.__index=MainGui
+local MainGui = {}
 
 ---@private
-function buildButton(parent, name, caption)
+function buildButton(parent, name, caption, associatedTeam)
     return parent.add{
         type="button",
         auto_toggle=true,
@@ -17,11 +12,15 @@ function buildButton(parent, name, caption)
     }
 end
 
----@private
-function MainGui:buildFrame()
-    frame = self.parent.add{
+---@param parent LuaGuiElement
+---@param name string
+---@param associatedTeam LuaForce
+---@param associatedPlayerIndex int
+---@return LuaGuiElement
+function MainGui.buildFrame(parent, name, associatedTeam, associatedPlayerIndex)
+    frame = parent.add{
         type = "frame",
-        name = self.name,
+        name = name,
         direction = "vertical",
         caption = "Teams"
     }
@@ -33,62 +32,52 @@ function MainGui:buildFrame()
     local scrollPane = frame.add({type="scroll-pane", name="content_frame", direction="vertical"})
     scrollPane.horizontal_scroll_policy = "never"
 
+    global.dynamicGuiElements[associatedPlayerIndex] = {}
+
     for _, team in pairs(global.teams) do
+        ---@cast team LuaForce
+        player = game.get_player(associatedPlayerIndex)
+        if player.force.index == team.index then
+            goto continue
+        end
+        
         local subpanelFrame = scrollPane.add{type="frame", direction="horizontal",style="subpanel_frame"}
         subpanelFrame.style.horizontally_stretchable = true
         subpanelFrame.add{type="label", name="clt_team_name", caption=team.name}
 
-        table.insert(self.dynamicElements, buildButton(subpanelFrame, "clt_enemy", "Feind"))
-        table.insert(self.dynamicElements, buildButton(subpanelFrame, "clt_friend", "Freund"))
+        table.insert(global.dynamicGuiElements[associatedPlayerIndex], buildButton(subpanelFrame, "clt_enemy", "Feind"))
+        table.insert(global.dynamicGuiElements[associatedPlayerIndex], buildButton(subpanelFrame, "clt_friend", "Freund"))
+        ::continue::
     end
 
-    self.raw = frame
+    MainGui.updateDynamicElements({game.get_player(associatedPlayerIndex)})
+    return frame
 end
 
----create a new MainGui
----@param parent LuaGuiElement
----@param name string
----@return MainGui
-function MainGui.new(parent, name)
-    local instance = setmetatable({}, MainGui)
-    instance.parent = parent
-    instance.name = name
-    instance.dynamicElements = {}
-    instance:buildFrame()
-    return instance
-end
-
----@param player LuaPlayer
----@return Team?
-local function getTeamOfPlayer(player)
-    for _, team in ipairs(global.teams) do
-        if team:containsPlayer(player) then
-            return team
+---@param players LuaPlayer[]
+function MainGui.updateDynamicElements(players)
+    for _, player in pairs(players) do
+        game.print(player)
+        playerTeam = game.forces[player.force_index]
+        for _, element in pairs(global.dynamicGuiElements[player.index]) do
+            if element.name == "clt_enemy" then
+                otherTeam = game.forces[element.parent.clt_team_name.caption]
+                game.print(otherTeam.index)
+                element.toggled = not playerTeam.get_cease_fire(otherTeam)
+            end
         end
     end
-    return nil
-end
-
-local function getTeam(teamName)
-    for _, team in pairs(global.teams) do
-        if team.name == teamName then
-            return team
+    --[[
+    for player, dynamicGuiElements in pairs(players) do
+        playerTeam = game.forces[player.force_index]
+        for _, element in pairs(dynamicGuiElements[player]) do
+            if element.name == "clt_enemy" then
+                otherTeam = game.forces[element.parent.clt_team_name.caption]
+                element.toggled = not playerTeam.get_cease_fire(otherTeam)
+            end
         end
     end
+    --]]
 end
 
-script.on_event(defines.events.on_gui_click, function (event)
-    player = game.get_player(event.player_index)
-    ---@cast player -?
-    if event.element.name == "clt_enemy" then
-        team = getTeamOfPlayer(player)
-        if team == nil then return end
-        if event.element.toggled then
-            otherTeamName = event.element.parent.clt_team_name
-            player.print("Hi")
-            --for _, gui in pairs(global.guis.otherTeamName) do
-             --   gui.dynamicElements.clt_enemy = event.element.toggled
-           -- end
-        end
-    end
-end)
+return MainGui
