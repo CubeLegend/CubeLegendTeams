@@ -17,6 +17,9 @@ end)
 function on_gui_click_MainGui(event)
     player = game.get_player(event.player_index)
     ---@cast player -?
+    if not event.element.valid then
+        return
+    end
     if event.element.name == "clt_enemy" then
         team = player.force
         otherTeamName = event.element.parent.clt_team_name.caption
@@ -32,7 +35,9 @@ end
 script.on_event("clt_toggle_maingui", function (event)
     player = game.get_player(event.player_index)
     gui = global.guis[event.player_index] ---@type LuaGuiElement
-    gui.visible = not gui.visible
+    if gui ~= nil then
+        gui.visible = not gui.visible
+    end
 end)
 
 local function deleteEmptyTeams()
@@ -43,9 +48,35 @@ local function deleteEmptyTeams()
     end
 end
 
+local function rebuildGuis(player, newTeam)
+    --- rebuild guis
+    for playerIndex, gui in pairs(global.guis) do
+        visibility = gui.visible
+        gui.destroy()
+        local playerWithGui = game.get_player(playerIndex)
+        ---@cast playerWithGui -?
+        local force = player.force
+        ---@cast force LuaForce
+        gui = MainGui.buildFrame(playerWithGui.gui.screen, "Teams", force, playerIndex)
+        gui.visible = visibility
+        global.guis[playerIndex] = gui
+    end
+
+    if global.guis[player.index] ~= nil then
+        global.guis[player.index].destroy()
+        global.guis[player.index] = nil
+    end
+    gui = MainGui.buildFrame(player.gui.screen, "Teams", newTeam, player.index)
+    gui.visible = false
+    global.guis[player.index] = gui
+end
+
 function on_gui_click_SelectTeamGui(event)
     player = game.get_player(event.player_index)
     element = event.element
+    if not element.valid then
+        return
+    end
     if player.controller_type == defines.controllers.cutscene then
         return
     end
@@ -54,6 +85,7 @@ function on_gui_click_SelectTeamGui(event)
         teamToJoin = game.forces[element.parent.clt_team_name.caption]
         player.force = teamToJoin
         deleteEmptyTeams()
+        rebuildGuis(player, teamToJoin)
         global.selectTeamGuis[player.index].destroy()
         global.selectTeamGuis[player.index] = nil
 
@@ -86,30 +118,16 @@ local function createTeam(name, player)
 
     player.force = newTeam
 
-    --- rebuild guis
-    for playerIndex, gui in pairs(global.guis) do
-        gui.destroy()
-        local playerWithGui = game.get_player(playerIndex)
-        ---@cast playerWithGui -?
-        local force = player.force
-        ---@cast force LuaForce
-        gui = MainGui.buildFrame(playerWithGui.gui.screen, "Teams", force, playerIndex)
-        global.guis[playerIndex] = gui
-    end
-
-    if global.guis[player.index] ~= nil then
-        global.guis[player.index].destroy()
-        global.guis[player.index] = nil
-    end
-    gui = MainGui.buildFrame(player.gui.screen, "Teams", newTeam, player.index)
-    gui.visible = false
-    global.guis[player.index] = gui
+    rebuildGuis(player, newTeam)
     deleteEmptyTeams()
 end
 
 function on_gui_click_TeamCreationGui(event)
     player = game.get_player(event.player_index)
     element = event.element
+    if not element.valid then
+        return
+    end
     if element.name == "createTeamConfirmButton" then
         textInput = element.parent.parent.textInput
         text = textInput.text ---@type string
