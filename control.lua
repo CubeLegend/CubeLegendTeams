@@ -2,6 +2,8 @@ local MainGui = require("MainGui")
 local SelectTeamGui = require("SelectTeamGui")
 local TeamCreationGui = require("TeamCreationGui")
 
+require("trading")
+
 global.guis = {} ---@type table<int, LuaGuiElement>
 global.dynamicGuiElements = {} ---@type table<int, LuaGuiElement[]>
 global.selectTeamGuis = {} ---@type table<int, LuaGuiElement>
