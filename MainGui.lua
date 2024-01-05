@@ -40,13 +40,19 @@ function MainGui.buildFrame(parent, name, associatedTeam, associatedPlayerIndex)
         if player.force.index == team.index then
             goto continue
         end
-        
+
         local subpanelFrame = scrollPane.add{type="frame", direction="horizontal",style="subpanel_frame"}
         subpanelFrame.style.horizontally_stretchable = true
-        subpanelFrame.add{type="label", name="clt_team_name", caption=team.name}
+        local label = subpanelFrame.add{type="label", name="clt_team_name", caption=team.name}
+        if game.forces[label.caption].get_cease_fire(team) then
+            green = {0, 1, 0, 0}
+            label.style.font_color = green
+        else
+            red = {1, 0, 0, 0}
+            label.style.font_color = red
+        end 
 
         table.insert(global.dynamicGuiElements[associatedPlayerIndex], buildButton(subpanelFrame, "clt_enemy", "Feind"))
-        table.insert(global.dynamicGuiElements[associatedPlayerIndex], buildButton(subpanelFrame, "clt_friend", "Freund"))
         ::continue::
     end
 
@@ -67,17 +73,6 @@ function MainGui.updateDynamicElements(players)
             end
         end
     end
-    --[[
-    for player, dynamicGuiElements in pairs(players) do
-        playerTeam = game.forces[player.force_index]
-        for _, element in pairs(dynamicGuiElements[player]) do
-            if element.name == "clt_enemy" then
-                otherTeam = game.forces[element.parent.clt_team_name.caption]
-                element.toggled = not playerTeam.get_cease_fire(otherTeam)
-            end
-        end
-    end
-    --]]
 end
 
 return MainGui
