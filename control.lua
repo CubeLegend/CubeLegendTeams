@@ -5,15 +5,6 @@ global.dynamicGuiElements = {} ---@type table<int, LuaGuiElement[]>
 global.teamPanel = {} ---@type table<int, LuaGuiElement[]>
 global.teams = {} ---@type LuaForce[]
 
-local function tablelength(T)
-    local count = 0
-    if T == nil then
-        return count
-    end
-    for _ in pairs(T) do count = count + 1 end
-    return count
-end
-
 script.on_event(defines.events.on_player_created, function (event)
     local player = game.get_player(event.player_index)
     ---@cast player -?
