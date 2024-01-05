@@ -44,6 +44,7 @@ function MainGui.buildFrame(parent, name, associatedTeam, associatedPlayerIndex)
         local subpanelFrame = scrollPane.add{type="frame", direction="horizontal",style="subpanel_frame"}
         subpanelFrame.style.horizontally_stretchable = true
         local label = subpanelFrame.add{type="label", name="clt_team_name", caption=team.name}
+        table.insert(global.dynamicGuiElements[associatedPlayerIndex], label)
         if game.forces[label.caption].get_cease_fire(team) then
             green = {0, 1, 0, 1}
             label.style.font_color = green
@@ -68,6 +69,15 @@ function MainGui.updateDynamicElements(players)
             if element.name == "clt_enemy" then
                 otherTeam = game.forces[element.parent.clt_team_name.caption]
                 element.toggled = not playerTeam.get_cease_fire(otherTeam)
+            elseif element.name == "clt_team_name" then
+                otherTeam = game.forces[element.caption]
+                if otherTeam.get_cease_fire(playerTeam) then
+                    green = {0, 1, 0, 1}
+                    element.style.font_color = green
+                else
+                    red = {1, 0, 0, 1}
+                    element.style.font_color = red
+                end
             end
         end
     end

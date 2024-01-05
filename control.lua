@@ -27,6 +27,7 @@ function on_gui_click_MainGui(event)
         otherTeamName = event.element.parent.clt_team_name.caption
         ---@cast otherTeamName string
         team.set_cease_fire(otherTeamName, (not event.element.toggled))
+        MainGui.updateDynamicElements(game.forces[otherTeamName].players)
         MainGui.updateDynamicElements(team.players)
     end
 end
