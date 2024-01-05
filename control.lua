@@ -1,5 +1,6 @@
 local MainGui = require("MainGui")
 local SelectTeamGui = require("SelectTeamGui")
+local TeamCreationGui = require("TeamCreationGui")
 
 global.guis = {} ---@type table<int, LuaGuiElement>
 global.dynamicGuiElements = {} ---@type table<int, LuaGuiElement[]>
@@ -81,48 +82,82 @@ function on_gui_click_SelectTeamGui(event)
         global.selectTeamGuis[player.index] = nil
 
     elseif element.name == "clt_create_team" then
-        local existingTeams = global.teams
-        local newTeamNumber = tostring(table_size(existingTeams) + 1)
-        local newTeam = game.create_force("Team"..newTeamNumber)
-        global.teams[newTeam.index] = newTeam
+        global.selectTeamGuis[player.index].visible = false
+        TeamCreationGui.buildFrame(player.gui.center, "Wähle einen Team Namen")
+    end
+end
 
-        --- set initial relations to other teams
-        for _, team in pairs(global.teams) do
-            newTeam.set_cease_fire(team, true)
-            newTeam.set_friend(team, false)
-            team.set_cease_fire(newTeam, true)
-            team.set_friend(newTeam, false)
+local function doesForceExist(name)
+    for _, team in pairs(game.forces) do
+        if team.name == name then
+            return true
         end
+    end
+    return false
+end
 
-        player.print(player.force.name)
-        player.force = newTeam
-        player.print(player.force.name)
+local function createTeam(name, player)
+    local newTeam = game.create_force(name)
+    global.teams[newTeam.index] = newTeam
 
-        --- rebuild guis
-        for playerIndex, gui in pairs(global.guis) do
-            gui.destroy()
-            local playerWithGui = game.get_player(playerIndex)
-            ---@cast playerWithGui -?
-            local force = player.force
-            ---@cast force LuaForce
-            gui = MainGui.buildFrame(playerWithGui.gui.screen, "Teams", force, playerIndex)
-            global.guis[playerIndex] = gui
+    --- set initial relations to other teams
+    for _, team in pairs(global.teams) do
+        newTeam.set_cease_fire(team, true)
+        newTeam.set_friend(team, false)
+        team.set_cease_fire(newTeam, true)
+        team.set_friend(newTeam, false)
+    end
+
+    player.force = newTeam
+
+    --- rebuild guis
+    for playerIndex, gui in pairs(global.guis) do
+        gui.destroy()
+        local playerWithGui = game.get_player(playerIndex)
+        ---@cast playerWithGui -?
+        local force = player.force
+        ---@cast force LuaForce
+        gui = MainGui.buildFrame(playerWithGui.gui.screen, "Teams", force, playerIndex)
+        global.guis[playerIndex] = gui
+    end
+
+    if global.guis[player.index] ~= nil then
+        global.guis[player.index].destroy()
+        global.guis[player.index] = nil
+    end
+    gui = MainGui.buildFrame(player.gui.screen, "Teams", newTeam, player.index)
+    gui.visible = false
+    global.guis[player.index] = gui
+    deleteEmptyTeams()
+end
+
+function on_gui_click_TeamCreationGui(event)
+    player = game.get_player(event.player_index)
+    element = event.element
+    if element.name == "createTeamConfirmButton" then
+        textInput = element.parent.parent.textInput
+        text = textInput.text ---@type string
+        if string.len(text) <= 0 then
+            return
         end
-
-        if global.guis[player.index] ~= nil then
-            global.guis[player.index].destroy()
-            global.guis[player.index] = nil
+        if doesForceExist(text) then
+            text = "Ein Team mit diesem Namen existiert bereits"
+            textInput.select_all()
+            return
         end
-        gui = MainGui.buildFrame(player.gui.screen, "Teams", newTeam, event.player_index)
-        gui.visible = false
-        global.guis[player.index] = gui
-        deleteEmptyTeams()
+        createTeam(text, player)
+        element.parent.parent.destroy()
         global.selectTeamGuis[player.index].destroy()
         global.selectTeamGuis[player.index] = nil
+
+    elseif element.name == "createTeamBackButton" then
+        element.parent.parent.destroy()
+        global.selectTeamGuis[player.index].visible = true
     end
 end
 
 script.on_event(defines.events.on_gui_click, function (event)
     on_gui_click_MainGui(event)
     on_gui_click_SelectTeamGui(event)
+    on_gui_click_TeamCreationGui(event)
 end)
