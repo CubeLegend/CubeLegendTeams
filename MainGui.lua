@@ -45,12 +45,12 @@ function MainGui.buildFrame(parent, name, associatedTeam, associatedPlayerIndex)
         subpanelFrame.style.horizontally_stretchable = true
         local label = subpanelFrame.add{type="label", name="clt_team_name", caption=team.name}
         if game.forces[label.caption].get_cease_fire(team) then
-            green = {0, 1, 0, 0}
+            green = {0, 1, 0, 1}
             label.style.font_color = green
         else
-            red = {1, 0, 0, 0}
+            red = {1, 0, 0, 1}
             label.style.font_color = red
-        end 
+        end
 
         table.insert(global.dynamicGuiElements[associatedPlayerIndex], buildButton(subpanelFrame, "clt_enemy", "Feind"))
         ::continue::
