@@ -155,3 +155,24 @@ script.on_event(defines.events.on_gui_click, function (event)
     on_gui_click_SelectTeamGui(event)
     on_gui_click_TeamCreationGui(event)
 end)
+
+-- Define your custom command
+commands.add_command("open_team_selection", "Allows you to open the team selection window mid game", function(command)
+    local player = game.get_player(command.player_index)
+
+    -- Check if the player is an administrator
+    if player and player.admin then
+        if global.selectTeamGuis[player.index] == nil then
+            playerName = command.parameter
+            if playerName == nil then
+                global.selectTeamGuis[player.index] = SelectTeamGui.buildFrame(player.gui.center, "Team Auswahl", player.index)
+                return
+            end
+            selectedPlayer = game.get_player(playerName)
+            if selectedPlayer == nil then
+                selectedPlayer.print(playerName.." doesn't exist")
+            end
+            global.selectTeamGuis[selectedPlayer.index] = SelectTeamGui.buildFrame(selectedPlayer.gui.center, "Team Auswahl", selectedPlayer.index)
+        end
+    end
+end)
