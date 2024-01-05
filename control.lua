@@ -69,6 +69,28 @@ function afterCutscene(event)
     for _, player in pairs(game.forces.player.players) do
         player.force = global.teams[4]
     end
+    for i = 1, 4 do
+        local existingTeams = global.teams
+        local newTeamNumber = tostring(table_size(existingTeams) + 1)
+        local newTeam = game.create_force("Team"..newTeamNumber)
+        global.teams[newTeam.index] = newTeam
+    end
+    --- rebuild guis
+    for playerIndex, gui in pairs(global.guis) do
+        gui.destroy()
+        local playerWithGui = game.get_player(playerIndex)
+        ---@cast playerWithGui -?
+        local force = player.force
+        ---@cast force LuaForce
+        gui = MainGui.buildFrame(playerWithGui.gui.screen, "Teams", force, playerIndex)
+        global.guis[playerIndex] = gui
+    end
 end
 script.on_event(defines.events.on_cutscene_cancelled, afterCutscene)
 script.on_event(defines.events.on_cutscene_finished, afterCutscene)
+
+script.on_event("clt_toggle_maingui", function (event)
+    player = game.get_player(event.player_index)
+    gui = global.guis[event.player_index] ---@type LuaGuiElement
+    gui.visible = not gui.visible
+end)
