@@ -24,10 +24,7 @@ function on_gui_click_MainGui(event)
         team = player.force
         otherTeamName = event.element.parent.clt_team_name.caption
         ---@cast otherTeamName string
-        player.print(otherTeamName)
-        player.print(event.element.toggled)
         team.set_cease_fire(otherTeamName, (not event.element.toggled))
-        player.print(team.get_cease_fire(otherTeamName))
         MainGui.updateDynamicElements(team.players)
     end
 end
@@ -43,13 +40,17 @@ end)
 local function deleteEmptyTeams()
     for _, team in pairs(global.teams) do
         if table_size(team.players) <= 0 then
+            global.teams[team.index] = nil
             game.merge_forces(team, game.forces.player)
         end
     end
 end
 
 local function rebuildGuis(player, newTeam)
-    --- rebuild guis
+    for playerIndex, element in pairs(global.dynamicGuiElements) do
+        global.dynamicGuiElements[playerIndex] = nil
+    end
+
     for playerIndex, gui in pairs(global.guis) do
         visibility = gui.visible
         gui.destroy()
@@ -118,8 +119,8 @@ local function createTeam(name, player)
 
     player.force = newTeam
 
-    rebuildGuis(player, newTeam)
     deleteEmptyTeams()
+    rebuildGuis(player, newTeam)
 end
 
 function on_gui_click_TeamCreationGui(event)

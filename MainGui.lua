@@ -63,12 +63,10 @@ end
 ---@param players LuaPlayer[]
 function MainGui.updateDynamicElements(players)
     for _, player in pairs(players) do
-        game.print(player)
         playerTeam = game.forces[player.force_index]
         for _, element in pairs(global.dynamicGuiElements[player.index]) do
             if element.name == "clt_enemy" then
                 otherTeam = game.forces[element.parent.clt_team_name.caption]
-                game.print(otherTeam.index)
                 element.toggled = not playerTeam.get_cease_fire(otherTeam)
             end
         end
