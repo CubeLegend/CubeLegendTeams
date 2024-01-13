@@ -1,3 +1,4 @@
+require("events")
 local MainGui = require("MainGui")
 local SelectTeamGui = require("SelectTeamGui")
 local TeamCreationGui = require("TeamCreationGui")
@@ -16,7 +17,8 @@ script.on_event(defines.events.on_player_created, function (event)
     global.selectTeamGuis[player.index] = SelectTeamGui.buildFrame(player.gui.center, "Team Auswahl", player.index)
 end)
 
-function on_gui_click_MainGui(event)
+--- on_gui_click_MainGui
+events.addHandler(defines.events.on_gui_click, function(event)
     player = game.get_player(event.player_index)
     ---@cast player -?
     if not event.element.valid then
@@ -30,7 +32,7 @@ function on_gui_click_MainGui(event)
         MainGui.updateDynamicElements(game.forces[otherTeamName].players)
         MainGui.updateDynamicElements(team.players)
     end
-end
+end)
 
 script.on_event("clt_toggle_maingui", function (event)
     player = game.get_player(event.player_index)
@@ -75,7 +77,8 @@ local function rebuildGuis(player, newTeam)
     global.guis[player.index] = gui
 end
 
-function on_gui_click_SelectTeamGui(event)
+--- on_gui_click_SelectTeamGui
+events.addHandler(defines.events.on_gui_click, function(event)
     player = game.get_player(event.player_index)
     element = event.element
     if not element.valid then
@@ -97,7 +100,7 @@ function on_gui_click_SelectTeamGui(event)
         global.selectTeamGuis[player.index].visible = false
         TeamCreationGui.buildFrame(player.gui.center, "Wähle einen Team Namen")
     end
-end
+end)
 
 local function doesForceExist(name)
     for _, team in pairs(game.forces) do
@@ -126,7 +129,8 @@ local function createTeam(name, player)
     rebuildGuis(player, newTeam)
 end
 
-function on_gui_click_TeamCreationGui(event)
+--- on_gui_click_TeamCreationGui
+events.addHandler(defines.events.on_gui_click, function(event)
     player = game.get_player(event.player_index)
     element = event.element
     if not element.valid then
@@ -152,12 +156,6 @@ function on_gui_click_TeamCreationGui(event)
         element.parent.parent.destroy()
         global.selectTeamGuis[player.index].visible = true
     end
-end
-
-script.on_event(defines.events.on_gui_click, function (event)
-    on_gui_click_MainGui(event)
-    on_gui_click_SelectTeamGui(event)
-    on_gui_click_TeamCreationGui(event)
 end)
 
 -- Define your custom command
