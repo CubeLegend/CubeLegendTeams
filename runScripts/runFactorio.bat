@@ -29,6 +29,10 @@ if not defined factorioExecutable (
     exit /b 1
 )
 
+REM Remove quotes if they exist
+set factorioExecutable=%factorioExecutable:"=%
+set modsDirectory=%modsDirectory:"=%
+
 REM Check if Factorio executable exists
 if not exist "%factorioExecutable%" (
     echo Factorio exectable not found. Please update the path in the config.txt file.
