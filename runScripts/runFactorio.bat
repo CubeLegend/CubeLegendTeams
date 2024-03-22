@@ -52,6 +52,6 @@ if not exist "%modsDirectory%" (
 )
 
 REM Run Factorio with mods directory parameter
-"%factorioExecutable%" --mod-directory %modsDirectory%
+"%factorioExecutable%" --mod-directory "%modsDirectory%"
 
 endlocal
